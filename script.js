@@ -175,10 +175,10 @@ function calculateResults() {
     document.getElementById('summary-section').style.display = 'block';
 }
 
+
 document.getElementById('exportReport').addEventListener('click', function () {
     exportCombinedCSV();
 });
-
 
 function exportCombinedCSV() {
     let csvContent = "data:text/csv;charset=utf-8,";
@@ -190,37 +190,32 @@ function exportCombinedCSV() {
 
     // Add full report header including mismatch column
     csvContent += "FULL REPORT\n";
-    csvContent += "Sheet Number,Sheet Name,File Name,Revision Code,Revision Date,Suitability Code,Stage Description,Document Naming Convention,Comments,Result,Mismatched Items\n";
+    
 
-    // Add data rows, handling missing values
+    function safeValue(value) {
+        if (value === null || value === undefined) {
+            return '"MISSING"';
+        }
+        return `"${String(value).replace(/"/g, '""').trim()}"`;  // Convert to string, escape quotes, and trim safely
+    }
+
+    // Add CSV headers
+    csvContent += '"Sheet Number","Sheet Name","File Name","Revision Code","Revision Date","Suitability Code","Stage Description","Document Naming Convention","Comments","Result","Mismatched Items"\n';
+
+    // Process each row
     fileData.forEach(row => {
-        let mismatches = [];
-        
-        // Check for missing fields and consider them as mismatches
-        if (!row.sheetNumber || row.sheetNumber.trim() === '') mismatches.push('Sheet Number');
-        if (!row.sheetName || row.sheetName.trim() === '') mismatches.push('Sheet Name');
-        if (!row.fileName || row.fileName.trim() === '') mismatches.push('File Name');
-        if (!row.revisionCode || row.revisionCode.trim() === '') mismatches.push('Revision Code');
-        if (!row.revisionDate || row.revisionDate.trim() === '') mismatches.push('Revision Date');
-        if (!row.suitabilityCode || row.suitabilityCode.trim() === '') mismatches.push('Suitability Code');
-        if (!row.stageDescription || row.stageDescription.trim() === '') mismatches.push('Stage Description');
-        if (!row.documentNamingConvention || row.documentNamingConvention.trim() === '') mismatches.push('Document Naming Convention');
-
-        row.mismatches = mismatches.join(", ");
-        row.result = mismatches.length > 0 ? "PLEASE REVISE" : "OK";
-
         csvContent += [
-            row.sheetNumber || "MISSING",
-            row.sheetName || "MISSING",
-            row.fileName || "MISSING",
-            row.revisionCode || "MISSING",
-            row.revisionDate || "MISSING",
-            row.suitabilityCode || "MISSING",
-            row.stageDescription || "MISSING",
-            row.documentNamingConvention || "MISSING",
-            row.comments || "MISSING",
-            row.result,
-            row.mismatches || "NONE"
+            safeValue(row.sheetNumber),
+            safeValue(row.sheetName),
+            safeValue(row.fileName),
+            safeValue(row.revisionCode),
+            safeValue(row.revisionDate),
+            safeValue(row.suitabilityCode),
+            safeValue(row.stageDescription),
+            safeValue(row.documentNamingConvention),
+            safeValue(row.comments || ""),
+            safeValue(row.result),
+            safeValue(row.mismatches || "NONE")
         ].join(",") + "\n";
     });
 
@@ -230,4 +225,8 @@ function exportCombinedCSV() {
     link.setAttribute("download", "QA_QC_Report.csv");
     document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
 }
+
+
+

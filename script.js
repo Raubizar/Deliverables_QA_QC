@@ -1,0 +1,193 @@
+let fileData = [];
+
+document.getElementById('fileInput').addEventListener('change', function (event) {
+    const file = event.target.files[0];
+    if (!file) {
+        alert("Please select an Excel file.");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        processExcelData(jsonData);
+    };
+
+    reader.readAsArrayBuffer(file);
+});
+
+function normalizeText(value) {
+    if (typeof value === 'string') {
+        return value.trim().replace(/\s+/g, ' ').toUpperCase();
+    }
+    return value;
+}
+
+function normalizeDate(value) {
+    if (typeof value === 'string') {
+        let parsedDate = new Date(value);
+        if (!isNaN(parsedDate.getTime())) {
+            // Convert to dd/mm/yyyy format
+            return parsedDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+        return value.trim();
+    }
+    return value;
+}
+
+
+function processExcelData(data) {
+    fileData = data.slice(1).map(row => ({
+        sheetNumber: normalizeText(row[0]),
+        sheetName: normalizeText(row[1]),
+        fileName: normalizeText(row[2]),
+        revisionCode: normalizeText(row[3]),
+        revisionDate: normalizeDate(row[4]),
+        suitabilityCode: normalizeText(row[5]),
+        stageDescription: normalizeText(row[6]),
+        documentNamingConvention: 'OK',
+        comments: '',
+        result: 'Pending',
+        mismatches: ''
+    }));
+
+    populateTable();
+}
+
+function populateTable() {
+    const tableBody = document.querySelector('#reportTable tbody');
+    tableBody.innerHTML = '';
+
+    fileData.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${row.sheetNumber}</td>
+            <td>${row.sheetName}</td>
+            <td>${row.fileName}</td>
+            <td>${row.revisionCode}</td>
+            <td>${row.revisionDate}</td>
+            <td>${row.suitabilityCode}</td>
+            <td>${row.stageDescription}</td>
+            <td>
+                <select class="documentNamingConvention" data-index="${index}">
+                    <option value="OK" selected>OK</option>
+                    <option value="Not correct">Not correct</option>
+                </select>
+            </td>
+            <td><input type="text" class="commentsInput" data-index="${index}" placeholder="Add comments"></td>
+            <td id="result-${index}">${row.result}</td>
+            <td id="mismatch-${index}">${row.mismatches}</td>
+        `;
+        tableBody.appendChild(tr);
+    });
+
+    document.getElementById('output-section').style.display = 'block';
+}
+
+document.getElementById('processFile').addEventListener('click', function () {
+    document.querySelectorAll('.documentNamingConvention').forEach(select => {
+        const index = select.getAttribute('data-index');
+        fileData[index].documentNamingConvention = select.value;
+    });
+
+    document.querySelectorAll('.commentsInput').forEach(input => {
+        const index = input.getAttribute('data-index');
+        fileData[index].comments = normalizeText(input.value);
+    });
+
+    calculateResults();
+});
+
+function calculateResults() {
+    let totalFiles = fileData.length;
+    let okCount = 0;
+    const expectedRevCode = normalizeText(document.getElementById('revisionCode').value);
+    const expectedRevDate = normalizeDate(document.getElementById('revisionDate').value);
+    const expectedSuitCode = normalizeText(document.getElementById('suitabilityCode').value);
+    const expectedStageDesc = normalizeText(document.getElementById('stageDescription').value);
+    const separator = document.getElementById('separator').value;  // Keep separator as is
+
+    fileData.forEach((row, index) => {
+        let mismatches = [];
+
+        let nameCheck = row.sheetNumber + separator + row.sheetName === row.fileName;
+        if (!nameCheck) mismatches.push('File Name');
+
+        let revisionValid = row.revisionCode.startsWith(expectedRevCode[0]) && parseInt(row.revisionCode.slice(1)) >= parseInt(expectedRevCode.slice(1));
+        if (!revisionValid) mismatches.push('Revision Code');
+
+        let dateValid = row.revisionDate === expectedRevDate;
+        if (!dateValid) mismatches.push('Revision Date');
+
+        let suitabilityValid = row.suitabilityCode === expectedSuitCode;
+        if (!suitabilityValid) mismatches.push('Suitability Code');
+
+        let stageDescValid = row.stageDescription === expectedStageDesc;
+        if (!stageDescValid) mismatches.push('Stage Description');
+
+        let namingConventionValid = row.documentNamingConvention === "OK";
+        if (!namingConventionValid) mismatches.push('Document Naming Convention');
+
+        let commentsValid = row.comments === '';
+        if (!commentsValid) mismatches.push('Comments');
+
+        let isValid = mismatches.length === 0;
+
+        const resultCell = document.getElementById(`result-${index}`);
+        const mismatchCell = document.getElementById(`mismatch-${index}`);
+
+        if (isValid) {
+            resultCell.textContent = "OK";
+            fileData[index].result = "OK";
+            okCount++;
+        } else {
+            resultCell.textContent = "Please Revise";
+            fileData[index].result = "Please Revise";
+        }
+        
+        mismatchCell.textContent = mismatches.join(', ');
+        fileData[index].mismatches = mismatches.join(', ');
+    });
+
+    document.getElementById('totalFiles').textContent = totalFiles;
+    document.getElementById('percentOK').textContent = ((okCount / totalFiles) * 100).toFixed(2) + '%';
+    document.getElementById('summary-section').style.display = 'block';
+}
+
+document.getElementById('exportReport').addEventListener('click', function () {
+    exportCombinedCSV();
+});
+
+function exportCombinedCSV() {
+    let csvContent = "data:text/csv;charset=utf-8,";
+
+    // Add summary at the top
+    csvContent += "SUMMARY REPORT\n";
+    csvContent += "Total Files,Percentage OK\n";
+    csvContent += `${fileData.length},${((fileData.filter(row => row.result === "OK").length / fileData.length) * 100).toFixed(2)}%\n\n`;
+
+    // Add full report header including mismatch column
+    csvContent += "FULL REPORT\n";
+    csvContent += "Sheet Number,Sheet Name,File Name,Revision Code,Revision Date,Suitability Code,Stage Description,Document Naming Convention,Comments,Result,Mismatched Items\n";
+
+    // Add data rows
+    fileData.forEach(row => {
+        csvContent += [
+            row.sheetNumber, row.sheetName, row.fileName, row.revisionCode, row.revisionDate,
+            row.suitabilityCode, row.stageDescription, row.documentNamingConvention, row.comments, row.result, row.mismatches
+        ].join(",") + "\n";
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "QA_QC_Report.csv");
+    document.body.appendChild(link);
+    link.click();
+}

@@ -1,0 +1,108 @@
+/* General Styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #013220;
+    color: #ffffff;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: flex-start; /* Align content to the left */
+    align-items: flex-start;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+/* Main container aligned to the left */
+.container {
+    background: #ffffff;
+    color: #000000;
+    padding: 20px;
+    width: 90%;
+    max-width: 1600px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-left: 20px; /* Ensuring it sticks to the left */
+    border-radius: 8px;
+}
+
+/* Table Styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-transform: uppercase;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+    font-size: 14px;
+}
+
+th {
+    background: #013220;
+    color: #d4af37;
+}
+
+td {
+    background: #f7f7f7;
+}
+
+/* Highlight incorrect results in bold red */
+td.result-cell {
+    font-weight: bold;
+}
+
+td.result-cell:not(:contains('OK')) {
+    color: red;
+}
+
+/* Button Styling */
+button {
+    padding: 10px 20px;
+    margin-top: 10px;
+    background: #d4af37;
+    color: #013220;
+    border: none;
+    cursor: pointer;
+    font-size: 1em;
+    border-radius: 5px;
+}
+
+button:hover {
+    background: #b58e30;
+}
+
+/* Upload section styling */
+.upload-section {
+    margin-bottom: 20px;
+}
+
+input, select {
+    padding: 10px;
+    margin: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        width: 100%;
+    }
+    
+    th, td {
+        font-size: 12px;
+        padding: 8px;
+    }
+
+    button {
+        font-size: 0.9em;
+    }
+
+    input, select {
+        width: 100%;
+    }
+}

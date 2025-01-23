@@ -107,34 +107,49 @@ document.getElementById('processFile').addEventListener('click', function () {
 function calculateResults() {
     let totalFiles = fileData.length;
     let okCount = 0;
-    const expectedRevCode = normalizeText(document.getElementById('revisionCode').value);
-    const expectedRevDate = normalizeDate(document.getElementById('revisionDate').value);
-    const expectedSuitCode = normalizeText(document.getElementById('suitabilityCode').value);
-    const expectedStageDesc = normalizeText(document.getElementById('stageDescription').value);
-    const separator = document.getElementById('separator').value;  // Keep separator as is
+    const expectedRevCode = normalizeText(document.getElementById('revisionCode').value || '');
+    const expectedRevDate = normalizeDate(document.getElementById('revisionDate').value || '');
+    const expectedSuitCode = normalizeText(document.getElementById('suitabilityCode').value || '');
+    const expectedStageDesc = normalizeText(document.getElementById('stageDescription').value || '');
+    const separator = document.getElementById('separator').value || ' - ';  // Default separator if missing
 
     fileData.forEach((row, index) => {
         let mismatches = [];
 
-        let nameCheck = row.sheetNumber + separator + row.sheetName === row.fileName;
+        // Handle missing fields by considering them as mismatches
+        const sheetNumber = row.sheetNumber ? normalizeText(row.sheetNumber) : '';
+        const sheetName = row.sheetName ? normalizeText(row.sheetName) : '';
+        const fileName = row.fileName ? normalizeText(row.fileName) : '';
+        const revisionCode = row.revisionCode ? normalizeText(row.revisionCode) : '';
+        const revisionDate = row.revisionDate ? normalizeDate(row.revisionDate) : '';
+        const suitabilityCode = row.suitabilityCode ? normalizeText(row.suitabilityCode) : '';
+        const stageDescription = row.stageDescription ? normalizeText(row.stageDescription) : '';
+        const documentNamingConvention = row.documentNamingConvention || 'Not correct';
+        const comments = row.comments ? normalizeText(row.comments) : '';
+
+        if (!sheetNumber || !sheetName || !fileName || !revisionCode || !revisionDate || !suitabilityCode || !stageDescription) {
+            mismatches.push('Missing Data');
+        }
+
+        let nameCheck = (sheetNumber + separator + sheetName) === fileName;
         if (!nameCheck) mismatches.push('File Name');
 
-        let revisionValid = row.revisionCode.startsWith(expectedRevCode[0]) && parseInt(row.revisionCode.slice(1)) >= parseInt(expectedRevCode.slice(1));
+        let revisionValid = revisionCode.startsWith(expectedRevCode[0]) && parseInt(revisionCode.slice(1)) >= parseInt(expectedRevCode.slice(1));
         if (!revisionValid) mismatches.push('Revision Code');
 
-        let dateValid = row.revisionDate === expectedRevDate;
+        let dateValid = revisionDate === expectedRevDate;
         if (!dateValid) mismatches.push('Revision Date');
 
-        let suitabilityValid = row.suitabilityCode === expectedSuitCode;
+        let suitabilityValid = suitabilityCode === expectedSuitCode;
         if (!suitabilityValid) mismatches.push('Suitability Code');
 
-        let stageDescValid = row.stageDescription === expectedStageDesc;
+        let stageDescValid = stageDescription === expectedStageDesc;
         if (!stageDescValid) mismatches.push('Stage Description');
 
-        let namingConventionValid = row.documentNamingConvention === "OK";
+        let namingConventionValid = documentNamingConvention === "OK";
         if (!namingConventionValid) mismatches.push('Document Naming Convention');
 
-        let commentsValid = row.comments === '';
+        let commentsValid = comments === '';
         if (!commentsValid) mismatches.push('Comments');
 
         let isValid = mismatches.length === 0;
@@ -164,6 +179,7 @@ document.getElementById('exportReport').addEventListener('click', function () {
     exportCombinedCSV();
 });
 
+
 function exportCombinedCSV() {
     let csvContent = "data:text/csv;charset=utf-8,";
 
@@ -176,11 +192,35 @@ function exportCombinedCSV() {
     csvContent += "FULL REPORT\n";
     csvContent += "Sheet Number,Sheet Name,File Name,Revision Code,Revision Date,Suitability Code,Stage Description,Document Naming Convention,Comments,Result,Mismatched Items\n";
 
-    // Add data rows
+    // Add data rows, handling missing values
     fileData.forEach(row => {
+        let mismatches = [];
+        
+        // Check for missing fields and consider them as mismatches
+        if (!row.sheetNumber || row.sheetNumber.trim() === '') mismatches.push('Sheet Number');
+        if (!row.sheetName || row.sheetName.trim() === '') mismatches.push('Sheet Name');
+        if (!row.fileName || row.fileName.trim() === '') mismatches.push('File Name');
+        if (!row.revisionCode || row.revisionCode.trim() === '') mismatches.push('Revision Code');
+        if (!row.revisionDate || row.revisionDate.trim() === '') mismatches.push('Revision Date');
+        if (!row.suitabilityCode || row.suitabilityCode.trim() === '') mismatches.push('Suitability Code');
+        if (!row.stageDescription || row.stageDescription.trim() === '') mismatches.push('Stage Description');
+        if (!row.documentNamingConvention || row.documentNamingConvention.trim() === '') mismatches.push('Document Naming Convention');
+
+        row.mismatches = mismatches.join(", ");
+        row.result = mismatches.length > 0 ? "PLEASE REVISE" : "OK";
+
         csvContent += [
-            row.sheetNumber, row.sheetName, row.fileName, row.revisionCode, row.revisionDate,
-            row.suitabilityCode, row.stageDescription, row.documentNamingConvention, row.comments, row.result, row.mismatches
+            row.sheetNumber || "MISSING",
+            row.sheetName || "MISSING",
+            row.fileName || "MISSING",
+            row.revisionCode || "MISSING",
+            row.revisionDate || "MISSING",
+            row.suitabilityCode || "MISSING",
+            row.stageDescription || "MISSING",
+            row.documentNamingConvention || "MISSING",
+            row.comments || "MISSING",
+            row.result,
+            row.mismatches || "NONE"
         ].join(",") + "\n";
     });
 

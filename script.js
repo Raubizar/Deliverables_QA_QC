@@ -134,10 +134,10 @@ function calculateResults() {
 
         let nameCheck;
         if (checkOnlySheetNumber) {
-            // Only compare sheetNumber to the fileName
+            // Only compare sheetNumber to fileName
             nameCheck = (sheetNumber === fileName);
         } else {
-            // Default logic combining sheetNumber + separator + sheetName
+            // Compare sheetNumber + separator + sheetName to fileName
             nameCheck = (sheetNumber + separator + sheetName) === fileName;
         }
 

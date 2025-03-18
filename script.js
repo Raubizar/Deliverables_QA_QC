@@ -112,6 +112,7 @@ function calculateResults() {
     const expectedSuitCode = normalizeText(document.getElementById('suitabilityCode').value || '');
     const expectedStageDesc = normalizeText(document.getElementById('stageDescription').value || '');
     const separator = document.getElementById('separator').value || ' - ';  // Default separator if missing
+    const checkOnlySheetNumber = document.getElementById('checkOnlySheetNumber').checked;
 
     fileData.forEach((row, index) => {
         let mismatches = [];
@@ -131,7 +132,15 @@ function calculateResults() {
             mismatches.push('Missing Data');
         }
 
-        let nameCheck = (sheetNumber + separator + sheetName) === fileName;
+        let nameCheck;
+        if (checkOnlySheetNumber) {
+            // Only compare sheetNumber to the fileName
+            nameCheck = (sheetNumber === fileName);
+        } else {
+            // Default logic combining sheetNumber + separator + sheetName
+            nameCheck = (sheetNumber + separator + sheetName) === fileName;
+        }
+
         if (!nameCheck) mismatches.push('File Name');
 
         let revisionValid = revisionCode.startsWith(expectedRevCode[0]) && parseInt(revisionCode.slice(1)) >= parseInt(expectedRevCode.slice(1));

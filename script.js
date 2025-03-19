@@ -30,17 +30,50 @@ function normalizeText(value) {
 }
 
 function normalizeDate(value) {
-    if (typeof value === 'string') {
-        let parsedDate = new Date(value);
-        if (!isNaN(parsedDate.getTime())) {
-            // Convert to dd/mm/yyyy format
-            return parsedDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        }
-        return value.trim();
-    }
-    return value;
-}
+  if (typeof value !== 'string') return value;
 
+  // Try multiple formats
+  const formats = [
+    /^\d{2}\.\d{2}\.\d{4}$/,  // 13.03.2025
+    /^\d{2}\/\d{2}\/\d{4}$/,  // 13/03/2025
+    /^\d{2}\.\w{3}\.\d{4}$/i, // 13.MAR.2025
+    /^\d{2}\/\d{2}\/\d{2}$/   // 13/03/25
+  ];
+
+  // First, see if input matches one of the patterns
+  const isKnownFormat = formats.some(regex => regex.test(value.trim()));
+  if (!isKnownFormat) {
+    // Fallback to default JS Date parse
+    const fallbackDate = new Date(value);
+    if (!isNaN(fallbackDate.getTime())) {
+      // Convert to dd/mm/yyyy for consistency
+      return fallbackDate.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    }
+    // Return original string if parsing fails
+    return value.trim();
+  }
+
+  // If it does match, parse accordingly
+  // (Simplest approach: replace "." with "/" then try new Date)
+  const standardized = value.trim()
+    .replace(/\./g, '/')  // Convert dots to slashes
+    .replace(/([A-Za-z]{3})/i, (m) => {
+      // Convert "MAR" to "03" etc. (This would need a small map)
+      const monthMap = { JAN: '01', FEB: '02', MAR: '03', APR: '04', MAY: '05', JUN: '06', JUL: '07', AUG: '08', SEP: '09', OCT: '10', NOV: '11', DEC: '12' };
+      return monthMap[m.toUpperCase()] || m;
+    });
+
+  const parsedDate = new Date(standardized);
+  if (!isNaN(parsedDate.getTime())) {
+    return parsedDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+
+  return value.trim();
+}
 
 function processExcelData(data) {
     fileData = data.slice(1).map(row => ({

@@ -82,9 +82,9 @@ function processExcelData(data) {
         fileName: normalizeText(row[2]),
         revisionCode: normalizeText(row[3]),
         revisionDate: normalizeDate(row[4]),
-        suitabilityCode: normalizeText(row[5]),
-        stageDescription: normalizeText(row[6]),
-        revisionDescription: normalizeText(row[7]), // Added this line
+        revisionDescription: normalizeText(row[5]), // Now at index 5
+        suitabilityCode: normalizeText(row[6]),
+        stageDescription: normalizeText(row[7]),
         documentNamingConvention: 'OK',
         comments: '',
         result: 'Pending',
@@ -93,6 +93,7 @@ function processExcelData(data) {
 
     populateTable();
 }
+
 
 
 

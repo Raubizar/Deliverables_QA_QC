@@ -144,6 +144,7 @@ function calculateResults() {
     const expectedRevDate = normalizeDate(document.getElementById('revisionDate').value || '');
     const expectedSuitCode = normalizeText(document.getElementById('suitabilityCode').value || '');
     const expectedStageDesc = normalizeText(document.getElementById('stageDescription').value || '');
+    const expectedRevisionDesc = document.getElementById('revisionDescription').value.trim();
     const separator = document.getElementById('separator').value || ' - ';  // Default separator if missing
     const checkOnlySheetNumber = document.getElementById('checkOnlySheetNumber').checked;
 
@@ -187,6 +188,9 @@ function calculateResults() {
 
         let stageDescValid = stageDescription === expectedStageDesc;
         if (!stageDescValid) mismatches.push('Stage Description');
+
+        let revisionDescValid = row.revisionDescription === expectedRevisionDesc;
+        if (!revisionDescValid) mismatches.push('Revision Description');
 
         let namingConventionValid = documentNamingConvention === "OK";
         if (!namingConventionValid) mismatches.push('Document Naming Convention');

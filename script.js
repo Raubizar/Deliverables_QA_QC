@@ -84,6 +84,7 @@ function processExcelData(data) {
         revisionDate: normalizeDate(row[4]),
         suitabilityCode: normalizeText(row[5]),
         stageDescription: normalizeText(row[6]),
+        revisionDescription: normalizeText(row[7]), // Added this line
         documentNamingConvention: 'OK',
         comments: '',
         result: 'Pending',
@@ -92,6 +93,8 @@ function processExcelData(data) {
 
     populateTable();
 }
+
+
 
 function populateTable() {
     const tableBody = document.querySelector('#reportTable tbody');
@@ -105,6 +108,7 @@ function populateTable() {
             <td>${row.fileName}</td>
             <td>${row.revisionCode}</td>
             <td>${row.revisionDate}</td>
+            <td>${row.revisionDescription}</td>
             <td>${row.suitabilityCode}</td>
             <td>${row.stageDescription}</td>
             <td>
@@ -144,7 +148,7 @@ function calculateResults() {
     const expectedRevDate = normalizeDate(document.getElementById('revisionDate').value || '');
     const expectedSuitCode = normalizeText(document.getElementById('suitabilityCode').value || '');
     const expectedStageDesc = normalizeText(document.getElementById('stageDescription').value || '');
-    const expectedRevisionDesc = document.getElementById('revisionDescription').value.trim();
+    const expectedRevisionDesc = normalizeText(document.getElementById('revisionDescription').value || '');
     const separator = document.getElementById('separator').value || ' - ';  // Default separator if missing
     const checkOnlySheetNumber = document.getElementById('checkOnlySheetNumber').checked;
 
